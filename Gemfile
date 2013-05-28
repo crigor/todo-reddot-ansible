@@ -20,8 +20,8 @@ end
 
 platform :ruby do
   gem 'pg'
-  gem 'sqlite3'
-  gem 'mysql2'
+  #gem 'sqlite3'
+  #gem 'mysql2'
   gem 'unicorn'
 end
 
