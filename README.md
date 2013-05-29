@@ -1,17 +1,14 @@
-[![Build Status](https://travis-ci.org/engineyard/todo.png?branch=update_rails)](https://travis-ci.org/engineyard/todo)
-[![Code Climate](https://codeclimate.com/github/engineyard/todo.png)](https://codeclimate.com/github/engineyard/todo)
+This todo app is copied from https://github.com/engineyard/todo. It contains chef recipes that will set up the app in Vagrant. It uses a Debian Wheezy box that contains ruby 1.9 and chef but nothing else.
 
+Chef will install nginx, monit, postgresql and create the config files. The app server is unicorn.
 
-# Todo for everyone
+- Install Virtualbox from https://www.virtualbox.org/wiki/Downloads
+- Install Vagrant 1.2.2 from http://downloads.vagrantup.com
+- Run the following commands
 
-Simple GTD app for task tracking.
+        vagrant box add vagrant-debian-wheezy http://crigor.com/rubykaigi/vagrant-debian-wheezy.box
+        git clone git://github.com/crigor/todo-rubykaigi.git
+        cd todo-rubykaigi
+        vagrant up
 
-Supports all Rubies and many stacks (passenger, unicorn, trinidad/jruby).
-
-# To run individual tests: (for example)
-
-bundle exec ruby -Itest test/functional/lists_controller_test.rb
-
-# To run specific tests: (for example)
-
-bundle exec ruby -Itest test/functional/lists_controller_test.rb --name test_should_create_list
+Sample output of the vagrant up command can be found at https://gist.github.com/crigor/5671292.
