@@ -1,0 +1,2 @@
+#!/bin/bash
+BUNDLE_GEMFILE=/data/<%= @app %>/current/Gemfile /usr/bin/bundle exec unicorn -E <%= @environment %> -c /data/<%= @app %>/shared/config/unicorn.rb -D
