@@ -1,0 +1,5 @@
+check process unicorn_master_{{ app }}
+  with pidfile /var/run/{{ app }}/unicorn.pid
+
+  start program = "/data/{{ app }}/shared/config/unicorn_start.sh" as uid {{ user }}
+  stop program = "/data/{{ app }}/shared/config/unicorn_stop.sh" as uid {{ user }}

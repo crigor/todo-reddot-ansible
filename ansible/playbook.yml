@@ -1,0 +1,97 @@
+- hosts: vagrant
+  vars:
+    app: foo
+    user: vagrant
+    framework_environment: development
+    lang: en_US
+  tasks:
+  - name: update aptitude
+    action: command aptitude update
+    sudo: yes
+  - name: LC_ALL # without this postgresql uses sql_ascii. Can't find a better fix
+    action: template src=templates/environment.j2 dest=/etc/environment
+    sudo: yes
+  - name: postgresql package
+    action: apt pkg=postgresql state=installed
+    sudo: yes
+    tags: psql
+  - name: pg_hba.conf
+    action: template src=templates/pg_hba.conf.j2 dest=/etc/postgresql/9.1/main/pg_hba.conf
+    sudo: yes
+    notify:
+    - reload postgresql
+    tags: psql
+  - name: postgresql service
+    action: service name=postgresql state=restarted
+    sudo: yes
+    tags: psql
+  - name: nginx is installed
+    action: apt pkg=nginx
+    sudo: yes
+  - service: name=nginx state=started
+    sudo: yes
+  - name: nginx config
+    action: template src=templates/nginx.conf.j2 dest=/etc/nginx/nginx.conf
+    sudo: yes
+    notify:
+    - reload nginx
+  - name: monit is installed
+    action: apt pkg=monit
+    sudo: yes
+  - name: monit config
+    action: template src=templates/monitrc.j2 dest=/etc/monit/monitrc
+    sudo: yes
+    notify:
+    - restart monit
+  - action: file dest=/data/${app}/shared/log owner=vagrant group=vagrant state=directory
+    sudo: yes
+  - action: file dest=/data/foo/shared/config owner=vagrant group=vagrant state=directory
+    sudo: yes
+  - action: file dest=/data/foo owner=vagrant group=vagrant state=directory recurse=true
+    sudo: yes
+  - action: file dest=/var/run/foo owner=vagrant group=vagrant state=directory
+    sudo: yes
+  - name: link to /vagrant
+    action: file dest=/data/foo/current src=/vagrant state=link
+  - name: monit config for unicorn
+    action: template src=templates/unicorn.monitrc.j2 dest=/etc/monit/conf.d/unicorn_foo.monitrc owner=vagrant
+    sudo: yes
+    notify:
+    - restart monit
+  - name: start script for unicorn
+    action: template src=templates/unicorn_start.sh.j2 dest=/data/${app}/shared/config/unicorn_start.sh mode=0755 owner=vagrant
+  - name: stop script for unicorn
+    action: template src=templates/unicorn_stop.sh.j2 dest=/data/${app}/shared/config/unicorn_stop.sh mode=0755 owner=vagrant
+  - name: unicorn.rb for the app
+    action: template src=templates/unicorn.rb.j2 dest=/data/${app}/shared/config/unicorn.rb owner=vagrant
+  - name: /etc/nginx/servers
+    action: file dest=/etc/nginx/servers owner=vagrant state=directory
+    sudo: yes
+  - name: nginx config for the app
+    action: template src=templates/app.conf.j2 dest=/etc/nginx/servers/${app}.conf owner=vagrant
+    notify:
+    - reload nginx
+  - name: package needed by the pg gem
+    action: apt pkg=postgresql-server-dev-9.1 state=installed
+    sudo: yes
+  - name: database.yml for the app
+    action: template src=templates/database.yml.j2 dest=/data/${app}/current/config/database.yml
+    tags: psql
+  - name: install bundler
+    action: command sudo gem install bundler creates=/usr/bin/bundle
+  - name: bundle gems on the app
+    action: command bundle install removes=/data/${app}/current/Gemfile chdir=/data/${app}/current
+  - name: create db and run migrations
+    action: command bundle exec rake db:create db:migrate chdir=/data/${app}/current removes=/data/${app}/current/Rakefile
+    tags: psql
+  handlers:
+    - name: reload nginx
+      action: service name=nginx state=reloaded
+      sudo: yes
+    - name: restart monit
+      action: service name=monit state=restarted
+      sudo: yes
+    - name: reload postgresql
+      action: service name=postgresql state=reloaded
+      sudo: yes
+
